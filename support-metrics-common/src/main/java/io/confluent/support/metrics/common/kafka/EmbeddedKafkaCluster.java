@@ -29,7 +29,6 @@ import kafka.utils.CoreUtils;
 import kafka.utils.SystemTime$;
 import kafka.utils.TestUtils;
 import kafka.zk.EmbeddedZookeeper;
-import scala.None;
 import scala.Option;
 import scala.Option$;
 
@@ -47,6 +46,7 @@ public class EmbeddedKafkaCluster {
   private static final boolean ENABLE_DELETE_TOPIC = false;
   private static final int BROKER_PORT = 0; // 0 results in a random port being selected
   private static final Option<File> TRUST_STORE_FILE = Option$.MODULE$.<File>empty();
+  private static final Option<Properties> SASL_PROPERTIES = Option$.MODULE$.<Properties>empty();
   private static final boolean ENABLE_PLAINTEXT = true;
   private static final boolean ENABLE_SASL_PLAINTEXT = false;
   private static final int SASL_PLAINTEXT_PORT = 0;
@@ -96,6 +96,7 @@ public class EmbeddedKafkaCluster {
           BROKER_PORT,
           INTER_BROKER_SECURITY_PROTOCOL,
           TRUST_STORE_FILE,
+          SASL_PROPERTIES,
           ENABLE_PLAINTEXT,
           ENABLE_SASL_PLAINTEXT,
           SASL_PLAINTEXT_PORT,
