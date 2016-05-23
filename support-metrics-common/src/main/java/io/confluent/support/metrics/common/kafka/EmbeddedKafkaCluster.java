@@ -29,7 +29,6 @@ import kafka.utils.CoreUtils;
 import kafka.utils.SystemTime$;
 import kafka.utils.TestUtils;
 import kafka.zk.EmbeddedZookeeper;
-import scala.None;
 import scala.Option;
 import scala.Option$;
 
