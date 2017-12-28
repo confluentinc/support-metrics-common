@@ -246,8 +246,7 @@ public abstract class BaseMetricsReporter implements Runnable {
         // attempt to create the topic. If failures occur, try again in the next round, however
         // the current batch of metrics will be lost.
         if (kafkaUtilities.createAndVerifyTopic(zkClientProvider().zkClient(), supportTopic,
-            SUPPORT_TOPIC_PARTITIONS,
-                                                SUPPORT_TOPIC_REPLICATION, RETENTION_MS
+            SUPPORT_TOPIC_PARTITIONS, SUPPORT_TOPIC_REPLICATION, RETENTION_MS
         )) {
           kafkaSubmitter.submit(encodedMetricsRecord);
         }

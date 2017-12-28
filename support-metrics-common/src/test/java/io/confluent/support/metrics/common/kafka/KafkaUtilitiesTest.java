@@ -53,7 +53,7 @@ public class KafkaUtilitiesTest {
     try {
       kUtil.getNumTopics(null);
       fail("IllegalArgumentException expected because zkClient is null");
-    } catch (IllegalArgumentException e) {
+    } catch (NullPointerException e) {
       // ignore
     }
   }
@@ -104,7 +104,7 @@ public class KafkaUtilitiesTest {
     try {
       kUtil.getBootstrapServers(null, anyMaxNumServers);
       fail("IllegalArgumentException expected because zkClient is null");
-    } catch (IllegalArgumentException e) {
+    } catch (NullPointerException e) {
       // ignore
     }
   }
@@ -145,7 +145,7 @@ public class KafkaUtilitiesTest {
     try {
       kUtil.createAndVerifyTopic(null, anyTopic, anyPartitions, anyReplication, anyRetentionMs);
       fail("IllegalArgumentException expected because zkClient is null");
-    } catch (IllegalArgumentException e) {
+    } catch (NullPointerException e) {
       // ignore
     }
   }
@@ -235,7 +235,7 @@ public class KafkaUtilitiesTest {
     try {
       kUtil.verifySupportTopic(null, anyTopic, anyPartitions, anyReplication);
       fail("IllegalArgumentException expected because zkClient is null");
-    } catch (IllegalArgumentException e) {
+    } catch (NullPointerException e) {
       // ignore
     }
   }

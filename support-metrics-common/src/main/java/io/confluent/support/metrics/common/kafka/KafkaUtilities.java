@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -71,9 +72,7 @@ public class KafkaUtilities {
    * @throws IllegalArgumentException if zkClient is null
    */
   public long getNumTopics(KafkaZkClient zkClient) {
-    if (zkClient == null) {
-      throw new IllegalArgumentException("zkClient must not be null");
-    }
+    Objects.requireNonNull(zkClient, "zkClient must not be null");
 
     try {
       Seq<String> topics = zkClient.getAllTopicsInCluster();
@@ -93,9 +92,8 @@ public class KafkaUtilities {
    *     errors.  Note that only servers with PLAINTEXT ports will be returned.
    */
   public List<String> getBootstrapServers(KafkaZkClient zkClient, int maxNumServers) {
-    if (zkClient == null) {
-      throw new IllegalArgumentException("zkClient must not be null");
-    }
+    Objects.requireNonNull(zkClient, "zkClient must not be null");
+
     if (maxNumServers < 1) {
       throw new IllegalArgumentException("maximum number of requested servers must be >= 1");
     }
@@ -138,9 +136,8 @@ public class KafkaUtilities {
       int replication,
       long retentionMs
   ) {
-    if (zkClient == null) {
-      throw new IllegalArgumentException("zkClient must not be null");
-    }
+    Objects.requireNonNull(zkClient, "zkClient must not be null");
+
     if (topic == null || topic.isEmpty()) {
       throw new IllegalArgumentException("topic must not be null or empty");
     }
@@ -221,10 +218,8 @@ public class KafkaUtilities {
       int expPartitions,
       int expReplication
   ) {
+    Objects.requireNonNull(zkClient, "zkClient must not be null");
 
-    if (zkClient == null) {
-      throw new IllegalArgumentException("zkClient must not be null");
-    }
     if (topic == null || topic.isEmpty()) {
       throw new IllegalArgumentException("topic must not be null or empty");
     }
