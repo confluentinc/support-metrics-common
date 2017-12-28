@@ -19,5 +19,12 @@ package io.confluent.support.metrics.common.kafka;
 import kafka.zk.KafkaZkClient;
 
 public interface ZkClientProvider {
+
+  /**
+   * Return a KafkaZkClient instance.
+   *
+   * The caller is not responsible for closing the returned instance. As such, implementations must return a cached
+   * instance that is closed via its own lifecycle operations (e.g. when the broker is shutdown).
+   */
   KafkaZkClient zkClient();
 }

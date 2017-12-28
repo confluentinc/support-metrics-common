@@ -114,8 +114,7 @@ public class KafkaSubmitter implements Submitter {
       zkClient = zkClientProvider.zkClient();
     }
     List<String> bootstrapServerList = new KafkaUtilities().getBootstrapServers(
-            zkClient,
-        BOOTSTRAP_SERVERS
+        zkClient, BOOTSTRAP_SERVERS
     );
     String[] bootstrapServers = bootstrapServerList.toArray(new String[bootstrapServerList.size()]);
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, StringUtils.join(bootstrapServers, ","));
