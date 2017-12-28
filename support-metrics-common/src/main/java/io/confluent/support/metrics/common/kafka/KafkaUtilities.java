@@ -14,30 +14,28 @@
 
 package io.confluent.support.metrics.common.kafka;
 
+import kafka.cluster.EndPoint;
+import kafka.zk.AdminZkClient;
+import kafka.zk.KafkaZkClient;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
 import kafka.admin.AdminOperationException;
-import kafka.admin.AdminUtils;
 import kafka.admin.RackAwareMode.Disabled$;
-import kafka.client.ClientUtils$;
 import kafka.cluster.Broker;
-import kafka.cluster.BrokerEndPoint;
-import kafka.common.BrokerEndPointNotAvailableException;
 import kafka.log.LogConfig;
 import kafka.server.BrokerShuttingDown;
 import kafka.server.KafkaServer;
 import kafka.server.PendingControlledShutdown;
 import kafka.server.RunningAsBroker;
-import kafka.utils.ZkUtils;
-import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.collection.Seq;
 
@@ -70,15 +68,15 @@ public class KafkaUtilities {
    * Get the total number of topics in the cluster by querying ZooKeeper.
    *
    * @return The total number of topics in the cluster, or -1 if there was an error.
-   * @throws IllegalArgumentException if zkUtils is null
+   * @throws IllegalArgumentException if zkClient is null
    */
-  public long getNumTopics(ZkUtils zkUtils) {
-    if (zkUtils == null) {
-      throw new IllegalArgumentException("zkUtils must not be null");
+  public long getNumTopics(KafkaZkClient zkClient) {
+    if (zkClient == null) {
+      throw new IllegalArgumentException("zkClient must not be null");
     }
 
     try {
-      Seq<String> topics = zkUtils.getAllTopics();
+      Seq<String> topics = zkClient.getAllTopicsInCluster();
       return topics.length();
     } catch (Exception e) {
       log.error("Could not retrieve number of topics from ZooKeeper: {}", e.getMessage());
@@ -94,32 +92,31 @@ public class KafkaUtilities {
    * @return A list of bootstrap servers, or an empty list if there are none or if there were
    *     errors.  Note that only servers with PLAINTEXT ports will be returned.
    */
-  public List<String> getBootstrapServers(ZkUtils zkUtils, int maxNumServers) {
-    if (zkUtils == null) {
-      throw new IllegalArgumentException("zkUtils must not be null");
+  public List<String> getBootstrapServers(KafkaZkClient zkClient, int maxNumServers) {
+    if (zkClient == null) {
+      throw new IllegalArgumentException("zkClient must not be null");
     }
     if (maxNumServers < 1) {
       throw new IllegalArgumentException("maximum number of requested servers must be >= 1");
     }
 
     // Note that we only support PLAINTEXT ports for this version
-    Seq<BrokerEndPoint> brokerList = ClientUtils$.MODULE$.getPlaintextBrokerEndPoints(zkUtils);
-    if (brokerList == null || brokerList.isEmpty()) {
-      return new ArrayList<>();
+    List<Broker> brokers = JavaConversions.seqAsJavaList(zkClient.getAllBrokersInCluster());
+    if (brokers == null) {
+      return Collections.emptyList();
     } else {
-      int actualServers = Math.min(maxNumServers, brokerList.size());
       List<String> bootstrapServers = new ArrayList<>();
-      Iterator<BrokerEndPoint> it = brokerList.iterator();
-      int i = 0;
-      while (it.hasNext() && i < actualServers) {
-        BrokerEndPoint brokerEndPoint = it.next();
-        try {
-          bootstrapServers.add(brokerEndPoint.connectionString());
-          i++;
-        } catch (BrokerEndPointNotAvailableException e) {
-          // try next one
+      for (Broker broker : brokers) {
+        for (EndPoint endPoint : JavaConversions.seqAsJavaList(broker.endPoints())) {
+          if (endPoint.listenerName().value().equals("PLAINTEXT")) {
+            bootstrapServers.add(endPoint.connectionString());
+            if (bootstrapServers.size() == maxNumServers) {
+              break;
+            }
+          }
         }
       }
+
       return bootstrapServers;
     }
   }
@@ -135,14 +132,14 @@ public class KafkaUtilities {
    *     partitions have dropped to unacceptable levels.
    */
   public boolean createAndVerifyTopic(
-      ZkUtils zkUtils,
+      KafkaZkClient zkClient,
       String topic,
       int partitions,
       int replication,
       long retentionMs
   ) {
-    if (zkUtils == null) {
-      throw new IllegalArgumentException("zkUtils must not be null");
+    if (zkClient == null) {
+      throw new IllegalArgumentException("zkClient must not be null");
     }
     if (topic == null || topic.isEmpty()) {
       throw new IllegalArgumentException("topic must not be null or empty");
@@ -159,13 +156,13 @@ public class KafkaUtilities {
 
     boolean topicCreated = true;
     try {
-      if (AdminUtils.topicExists(zkUtils, topic)) {
+      if (zkClient.topicExists(topic)) {
         return (
-            verifySupportTopic(zkUtils, topic, partitions, replication)
+            verifySupportTopic(zkClient, topic, partitions, replication)
             != VerifyTopicState.Inadequate
           );
       }
-      Seq<Broker> brokerList = zkUtils.getAllBrokersInCluster();
+      Seq<Broker> brokerList = zkClient.getAllBrokersInCluster();
       int actualReplication = Math.min(replication, brokerList.size());
       if (actualReplication < replication) {
         log.warn(
@@ -187,8 +184,8 @@ public class KafkaUtilities {
       log.info("Attempting to create topic {} with {} replicas, assuming {} total brokers",
                topic, actualReplication, brokerList.size()
       );
-      AdminUtils.createTopic(
-          zkUtils,
+      AdminZkClient adminClient = new AdminZkClient(zkClient);
+      adminClient.createTopic(
           topic,
           partitions,
           actualReplication,
@@ -219,14 +216,14 @@ public class KafkaUtilities {
    * @return an enum describing the topic state
    */
   public VerifyTopicState verifySupportTopic(
-      ZkUtils zkUtils,
+      KafkaZkClient zkClient,
       String topic,
       int expPartitions,
       int expReplication
   ) {
 
-    if (zkUtils == null) {
-      throw new IllegalArgumentException("zkUtils must not be null");
+    if (zkClient == null) {
+      throw new IllegalArgumentException("zkClient must not be null");
     }
     if (topic == null || topic.isEmpty()) {
       throw new IllegalArgumentException("topic must not be null or empty");
@@ -242,12 +239,9 @@ public class KafkaUtilities {
     try {
       Set<String> topics = new HashSet<>();
       topics.add(topic);
-      scala.Option<scala.collection.Map<Object, Seq<Object>>> partitionAssignmentOption = zkUtils
-          .getPartitionAssignmentForTopics(
-              JavaConversions
-                  .asScalaSet(topics)
-                  .toSeq()
-          ).get(topic);
+      scala.Option<scala.collection.immutable.Map<Object, Seq<Object>>> partitionAssignmentOption =
+          zkClient.getPartitionAssignmentForTopics(
+              JavaConversions.asScalaSet(topics).<String>toSet()).get(topic);
       if (!partitionAssignmentOption.isEmpty()) {
         scala.collection.Map partitionAssignment = partitionAssignmentOption.get();
         int actualNumPartitions = partitionAssignment.size();

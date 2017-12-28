@@ -16,8 +16,8 @@
 
 package io.confluent.support.metrics.common.kafka;
 
-import kafka.utils.ZkUtils;
+import kafka.zk.KafkaZkClient;
 
-public interface ZkUtilsProvider {
-  ZkUtils zkUtils();
+public interface ZkClientProvider {
+  KafkaZkClient zkClient();
 }

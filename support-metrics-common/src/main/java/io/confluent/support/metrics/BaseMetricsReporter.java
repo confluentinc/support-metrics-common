@@ -24,7 +24,7 @@ import java.util.Objects;
 
 import io.confluent.support.metrics.common.Collector;
 import io.confluent.support.metrics.common.kafka.KafkaUtilities;
-import io.confluent.support.metrics.common.kafka.ZkUtilsProvider;
+import io.confluent.support.metrics.common.kafka.ZkClientProvider;
 import io.confluent.support.metrics.serde.AvroSerializer;
 import io.confluent.support.metrics.submitters.ConfluentSubmitter;
 import io.confluent.support.metrics.submitters.KafkaSubmitter;
@@ -118,7 +118,7 @@ public abstract class BaseMetricsReporter implements Runnable {
     supportTopic = supportConfig.getKafkaTopic();
 
     if (!supportTopic.isEmpty()) {
-      kafkaSubmitter = new KafkaSubmitter(zkUtilsProvider(), supportTopic);
+      kafkaSubmitter = new KafkaSubmitter(zkClientProvider(), supportTopic);
     } else {
       kafkaSubmitter = null;
     }
@@ -140,7 +140,7 @@ public abstract class BaseMetricsReporter implements Runnable {
     }
   }
 
-  protected abstract ZkUtilsProvider zkUtilsProvider();
+  protected abstract ZkClientProvider zkClientProvider();
 
   protected abstract Collector metricsCollector();
 
@@ -245,7 +245,7 @@ public abstract class BaseMetricsReporter implements Runnable {
       if (sendToKafkaEnabled() && encodedMetricsRecord != null) {
         // attempt to create the topic. If failures occur, try again in the next round, however
         // the current batch of metrics will be lost.
-        if (kafkaUtilities.createAndVerifyTopic(zkUtilsProvider().zkUtils(), supportTopic,
+        if (kafkaUtilities.createAndVerifyTopic(zkClientProvider().zkClient(), supportTopic,
             SUPPORT_TOPIC_PARTITIONS,
                                                 SUPPORT_TOPIC_REPLICATION, RETENTION_MS
         )) {

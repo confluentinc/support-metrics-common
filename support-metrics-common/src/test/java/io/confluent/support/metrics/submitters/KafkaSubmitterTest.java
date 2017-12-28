@@ -18,8 +18,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import io.confluent.support.metrics.common.kafka.ZkUtilsProvider;
-import kafka.utils.ZkUtils;
+import io.confluent.support.metrics.common.kafka.ZkClientProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -31,17 +30,17 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class KafkaSubmitterTest {
 
-  private static ZkUtilsProvider zkUtilsProvider;
+  private static ZkClientProvider zkClientProvider;
 
   @BeforeClass
   public static void startCluster() {
-    zkUtilsProvider = mock(ZkUtilsProvider.class);
+    zkClientProvider = mock(ZkClientProvider.class);
   }
 
   @Test
   public void testInvalidArgumentsForConstructorNullServer() {
     // Given
-    ZkUtilsProvider nullServer = null;
+    ZkClientProvider nullServer = null;
     String anyTopic = "valueNotRelevant";
 
     // When/Then
@@ -49,7 +48,7 @@ public class KafkaSubmitterTest {
       new KafkaSubmitter(nullServer, anyTopic);
       fail("IllegalArgumentException expected because server is null");
     } catch (IllegalArgumentException e) {
-      assertThat(e).hasMessage("must specify zkUtils provider");
+      assertThat(e).hasMessage("must specify zkClientProvider");
     }
   }
 
@@ -61,7 +60,7 @@ public class KafkaSubmitterTest {
 
     // When/Then
     try {
-      new KafkaSubmitter(zkUtilsProvider, nullTopic);
+      new KafkaSubmitter(zkClientProvider, nullTopic);
       fail("IllegalArgumentException expected because topic is null");
     } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage("must specify topic");
@@ -75,7 +74,7 @@ public class KafkaSubmitterTest {
 
     // When/Then
     try {
-      new KafkaSubmitter(zkUtilsProvider, emptyTopic);
+      new KafkaSubmitter(zkClientProvider, emptyTopic);
       fail("IllegalArgumentException expected because topic is the empty string");
     } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage("must specify topic");
@@ -86,7 +85,7 @@ public class KafkaSubmitterTest {
   public void testSubmitIgnoresNullInput() {
     // Given
     String anyTopic = "valueNotRelevant";
-    KafkaSubmitter k = new KafkaSubmitter(zkUtilsProvider, anyTopic);
+    KafkaSubmitter k = new KafkaSubmitter(zkClientProvider, anyTopic);
     Producer<byte[], byte[]> producer = mock(Producer.class);
     byte[] nullData = null;
 
@@ -101,7 +100,7 @@ public class KafkaSubmitterTest {
   public void testSubmitIgnoresEmptyInput() {
     // Given
     String anyTopic = "valueNotRelevant";
-    KafkaSubmitter k = new KafkaSubmitter(zkUtilsProvider, anyTopic);
+    KafkaSubmitter k = new KafkaSubmitter(zkClientProvider, anyTopic);
     Producer<byte[], byte[]> producer = mock(Producer.class);
     byte[] emptyData = new byte[0];
 
@@ -116,7 +115,7 @@ public class KafkaSubmitterTest {
   public void testSubmit() {
     // Given
     String anyTopic = "valueNotRelevant";
-    KafkaSubmitter k = new KafkaSubmitter(zkUtilsProvider, anyTopic);
+    KafkaSubmitter k = new KafkaSubmitter(zkClientProvider, anyTopic);
     Producer<byte[], byte[]> producer = mock(Producer.class);
     byte[] anyData = "anyData".getBytes();
 

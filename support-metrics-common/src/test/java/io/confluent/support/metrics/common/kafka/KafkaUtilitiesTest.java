@@ -13,6 +13,7 @@
  */
 package io.confluent.support.metrics.common.kafka;
 
+import kafka.zk.KafkaZkClient;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ import java.util.Random;
 
 import kafka.cluster.Broker;
 import kafka.server.KafkaServer;
-import kafka.utils.ZkUtils;
 import scala.collection.JavaConversions;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  */
 public class KafkaUtilitiesTest {
 
-  private static final ZkUtils mockZkUtils = mock(ZkUtils.class);
+  private static final KafkaZkClient mockZkClient = mock(KafkaZkClient.class);
   private static final int anyMaxNumServers = 2;
   private static final String anyTopic = "valueNotRelevant";
   private static final int anyPartitions = 1;
@@ -45,14 +45,14 @@ public class KafkaUtilitiesTest {
   private static final String[] exampleTopics = {"__confluent.support.metrics", "anyTopic", "basketball"};
 
   @Test
-  public void getNumTopicsThrowsIAEWhenZkUtilsIsNull() {
+  public void getNumTopicsThrowsIAEWhenKafkaZkClientIsNull() {
     // Given
     KafkaUtilities kUtil = new KafkaUtilities();
 
     // When/Then
     try {
       kUtil.getNumTopics(null);
-      fail("IllegalArgumentException expected because zkUtils is null");
+      fail("IllegalArgumentException expected because zkClient is null");
     } catch (IllegalArgumentException e) {
       // ignore
     }
@@ -62,48 +62,48 @@ public class KafkaUtilitiesTest {
   public void getNumTopicsReturnsMinusOneOnError() {
     // Given
     KafkaUtilities kUtil = new KafkaUtilities();
-    ZkUtils zkUtils = mock(ZkUtils.class);
-    when(zkUtils.getAllTopics()).thenThrow(new RuntimeException("exception intentionally thrown by test"));
+    KafkaZkClient zkClient = mock(KafkaZkClient.class);
+    when(zkClient.getAllTopicsInCluster()).thenThrow(new RuntimeException("exception intentionally thrown by test"));
 
     // When/Then
-    assertThat(kUtil.getNumTopics(zkUtils)).isEqualTo(-1L);
+    assertThat(kUtil.getNumTopics(zkClient)).isEqualTo(-1L);
   }
 
   @Test
   public void getNumTopicsReturnsZeroWhenThereAreNoTopics() {
     // Given
     KafkaUtilities kUtil = new KafkaUtilities();
-    ZkUtils zkUtils = mock(ZkUtils.class);
+    KafkaZkClient zkClient = mock(KafkaZkClient.class);
     List<String> zeroTopics = new ArrayList<>();
-    when(zkUtils.getAllTopics()).thenReturn(JavaConversions.asScalaBuffer(zeroTopics).toList());
+    when(zkClient.getAllTopicsInCluster()).thenReturn(JavaConversions.asScalaBuffer(zeroTopics).toList());
 
     // When/Then
-    assertThat(kUtil.getNumTopics(zkUtils)).isEqualTo(0L);
+    assertThat(kUtil.getNumTopics(zkClient)).isEqualTo(0L);
   }
 
   @Test
   public void getNumTopicsReturnsCorrectNumber() {
     // Given
     KafkaUtilities kUtil = new KafkaUtilities();
-    ZkUtils zkUtils = mock(ZkUtils.class);
+    KafkaZkClient zkClient = mock(KafkaZkClient.class);
     List<String> topics = new ArrayList<>();
     topics.add("topic1");
     topics.add("topic2");
-    when(zkUtils.getAllTopics()).thenReturn(JavaConversions.asScalaBuffer(topics).toList());
+    when(zkClient.getAllTopicsInCluster()).thenReturn(JavaConversions.asScalaBuffer(topics).toList());
 
     // When/Then
-    assertThat(kUtil.getNumTopics(zkUtils)).isEqualTo(topics.size());
+    assertThat(kUtil.getNumTopics(zkClient)).isEqualTo(topics.size());
   }
 
   @Test
-  public void getBootstrapServersThrowsIAEWhenZkUtilsIsNull() {
+  public void getBootstrapServersThrowsIAEWhenKafkaZkClientIsNull() {
     // Given
     KafkaUtilities kUtil = new KafkaUtilities();
 
     // When/Then
     try {
       kUtil.getBootstrapServers(null, anyMaxNumServers);
-      fail("IllegalArgumentException expected because zkUtils is null");
+      fail("IllegalArgumentException expected because zkClient is null");
     } catch (IllegalArgumentException e) {
       // ignore
     }
@@ -117,7 +117,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.getBootstrapServers(mockZkUtils, zeroMaxNumServers);
+      kUtil.getBootstrapServers(mockZkClient, zeroMaxNumServers);
       fail("IllegalArgumentException expected because max number of servers is zero");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -128,23 +128,23 @@ public class KafkaUtilitiesTest {
   public void getBootstrapServersReturnsEmptyListWhenThereAreNoLiveBrokers() {
     // Given
     KafkaUtilities kUtil = new KafkaUtilities();
-    ZkUtils zkUtils = mock(ZkUtils.class);
+    KafkaZkClient zkClient = mock(KafkaZkClient.class);
     List<Broker> empty = new ArrayList<>();
-    when(zkUtils.getAllBrokersInCluster()).thenReturn(JavaConversions.asScalaBuffer(empty).toList());
+    when(zkClient.getAllBrokersInCluster()).thenReturn(JavaConversions.asScalaBuffer(empty).toList());
 
     // When/Then
-    assertThat(kUtil.getBootstrapServers(zkUtils, anyMaxNumServers)).isEmpty();
+    assertThat(kUtil.getBootstrapServers(zkClient, anyMaxNumServers)).isEmpty();
   }
 
   @Test
-  public void createTopicThrowsIAEWhenZkUtilsIsNull() {
+  public void createTopicThrowsIAEWhenKafkaZkClientIsNull() {
     // Given
     KafkaUtilities kUtil = new KafkaUtilities();
 
     // When/Then
     try {
       kUtil.createAndVerifyTopic(null, anyTopic, anyPartitions, anyReplication, anyRetentionMs);
-      fail("IllegalArgumentException expected because zkUtils is null");
+      fail("IllegalArgumentException expected because zkClient is null");
     } catch (IllegalArgumentException e) {
       // ignore
     }
@@ -158,7 +158,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.createAndVerifyTopic(mockZkUtils, nullTopic, anyPartitions, anyReplication, anyRetentionMs);
+      kUtil.createAndVerifyTopic(mockZkClient, nullTopic, anyPartitions, anyReplication, anyRetentionMs);
       fail("IllegalArgumentException expected because topic is null");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -173,7 +173,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.createAndVerifyTopic(mockZkUtils, emptyTopic, anyPartitions, anyReplication, anyRetentionMs);
+      kUtil.createAndVerifyTopic(mockZkClient, emptyTopic, anyPartitions, anyReplication, anyRetentionMs);
       fail("IllegalArgumentException expected because topic is empty");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -188,7 +188,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.createAndVerifyTopic(mockZkUtils, anyTopic, zeroPartitions, anyReplication, anyRetentionMs);
+      kUtil.createAndVerifyTopic(mockZkClient, anyTopic, zeroPartitions, anyReplication, anyRetentionMs);
       fail("IllegalArgumentException expected because number of partitions is zero");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -203,7 +203,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.createAndVerifyTopic(mockZkUtils, anyTopic, anyPartitions, zeroReplication, anyRetentionMs);
+      kUtil.createAndVerifyTopic(mockZkClient, anyTopic, anyPartitions, zeroReplication, anyRetentionMs);
       fail("IllegalArgumentException expected because replication factor is zero");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -218,7 +218,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.createAndVerifyTopic(mockZkUtils, anyTopic, anyPartitions, anyReplication, zeroRetentionMs);
+      kUtil.createAndVerifyTopic(mockZkClient, anyTopic, anyPartitions, anyReplication, zeroRetentionMs);
       fail("IllegalArgumentException expected because retention.ms is zero");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -227,14 +227,14 @@ public class KafkaUtilitiesTest {
 
 
   @Test
-  public void verifySupportTopicThrowsIAEWhenZkUtilsIsNull() {
+  public void verifySupportTopicThrowsIAEWhenKafkaZkClientIsNull() {
     // Given
     KafkaUtilities kUtil = new KafkaUtilities();
 
     // When/Then
     try {
       kUtil.verifySupportTopic(null, anyTopic, anyPartitions, anyReplication);
-      fail("IllegalArgumentException expected because zkUtils is null");
+      fail("IllegalArgumentException expected because zkClient is null");
     } catch (IllegalArgumentException e) {
       // ignore
     }
@@ -249,7 +249,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.verifySupportTopic(mockZkUtils, nullTopic, anyPartitions, anyReplication);
+      kUtil.verifySupportTopic(mockZkClient, nullTopic, anyPartitions, anyReplication);
       fail("IllegalArgumentException expected because topic is null");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -264,7 +264,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.verifySupportTopic(mockZkUtils, emptyTopic, anyPartitions, anyReplication);
+      kUtil.verifySupportTopic(mockZkClient, emptyTopic, anyPartitions, anyReplication);
       fail("IllegalArgumentException expected because topic is empty");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -279,7 +279,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.verifySupportTopic(mockZkUtils, anyTopic, zeroPartitions, anyReplication);
+      kUtil.verifySupportTopic(mockZkClient, anyTopic, zeroPartitions, anyReplication);
       fail("IllegalArgumentException expected because number of partitions is zero");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -294,7 +294,7 @@ public class KafkaUtilitiesTest {
 
     // When/Then
     try {
-      kUtil.verifySupportTopic(mockZkUtils, anyTopic, anyPartitions, zeroReplication);
+      kUtil.verifySupportTopic(mockZkClient, anyTopic, anyPartitions, zeroReplication);
       fail("IllegalArgumentException expected because replication factor is zero");
     } catch (IllegalArgumentException e) {
       // ignore
@@ -311,17 +311,19 @@ public class KafkaUtilitiesTest {
     int replication = numBrokers + 1;
     cluster.startCluster(numBrokers);
     KafkaServer broker = cluster.getBroker(0);
+    KafkaZkClient zkClient = broker.zkClient();
 
     // When/Then
     for (String topic : exampleTopics) {
-      assertThat(kUtil.createAndVerifyTopic(broker.zkUtils(), topic, partitions, replication, oneYearRetention)).isTrue();
+      assertThat(kUtil.createAndVerifyTopic(zkClient, topic, partitions, replication, oneYearRetention)).isTrue();
       // Only one broker is up, so the actual number of replicas will be only 1.
-      assertThat(kUtil.verifySupportTopic(broker.zkUtils(), topic, partitions, replication)).isEqualTo(KafkaUtilities.VerifyTopicState.Less);
+      assertThat(kUtil.verifySupportTopic(zkClient, topic, partitions, replication)).isEqualTo(KafkaUtilities.VerifyTopicState.Less);
     }
-    assertThat(kUtil.getNumTopics(broker.zkUtils())).isEqualTo(exampleTopics.length);
+    assertThat(kUtil.getNumTopics(zkClient)).isEqualTo(exampleTopics.length);
 
     // Cleanup
     cluster.stopCluster();
+    zkClient.close();
   }
 
 
@@ -335,14 +337,15 @@ public class KafkaUtilitiesTest {
     int replication = numBrokers + 1;
     cluster.startCluster(numBrokers);
     KafkaServer broker = cluster.getBroker(0);
+    KafkaZkClient zkClient = broker.zkClient();
 
     // When/Then
     for (String topic : exampleTopics) {
-      assertThat(kUtil.createAndVerifyTopic(broker.zkUtils(), topic, partitions, replication, oneYearRetention)).isTrue();
-      assertThat(kUtil.createAndVerifyTopic(broker.zkUtils(), topic, partitions, replication, oneYearRetention)).isTrue();
-      assertThat(kUtil.verifySupportTopic(broker.zkUtils(), topic, partitions, replication)).isEqualTo(KafkaUtilities.VerifyTopicState.Less);
+      assertThat(kUtil.createAndVerifyTopic(zkClient, topic, partitions, replication, oneYearRetention)).isTrue();
+      assertThat(kUtil.createAndVerifyTopic(zkClient, topic, partitions, replication, oneYearRetention)).isTrue();
+      assertThat(kUtil.verifySupportTopic(zkClient, topic, partitions, replication)).isEqualTo(KafkaUtilities.VerifyTopicState.Less);
     }
-    assertThat(kUtil.getNumTopics(broker.zkUtils())).isEqualTo(exampleTopics.length);
+    assertThat(kUtil.getNumTopics(zkClient)).isEqualTo(exampleTopics.length);
 
     // Cleanup
     cluster.stopCluster();
@@ -356,11 +359,11 @@ public class KafkaUtilitiesTest {
     EmbeddedKafkaCluster cluster = new EmbeddedKafkaCluster();
     cluster.startCluster(1);
     KafkaServer broker = cluster.getBroker(0);
-    ZkUtils defunctZkUtils = broker.zkUtils();
+    KafkaZkClient defunctZkClient = broker.zkClient();
     cluster.stopCluster();
 
     // When/Then
-    assertThat(kUtil.createAndVerifyTopic(defunctZkUtils, anyTopic, anyPartitions, anyReplication, anyRetentionMs)).isFalse();
+    assertThat(kUtil.createAndVerifyTopic(defunctZkClient, anyTopic, anyPartitions, anyReplication, anyRetentionMs)).isFalse();
   }
 
   @Test
@@ -371,15 +374,15 @@ public class KafkaUtilitiesTest {
     int numBrokers = 3;
     cluster.startCluster(numBrokers);
     KafkaServer broker = cluster.getBroker(0);
-    ZkUtils zkUtils = broker.zkUtils();
+    KafkaZkClient zkClient = broker.zkClient();
     Random random = new Random();
     int replication = numBrokers;
 
     // When/Then
     for (String topic : exampleTopics) {
       int morePartitionsThanBrokers = random.nextInt(10) + numBrokers + 1;
-      assertThat(kUtil.createAndVerifyTopic(zkUtils, topic, morePartitionsThanBrokers, replication, oneYearRetention)).isTrue();
-      assertThat(kUtil.verifySupportTopic(zkUtils, topic, morePartitionsThanBrokers, replication)).isEqualTo(KafkaUtilities.VerifyTopicState.Exactly);
+      assertThat(kUtil.createAndVerifyTopic(zkClient, topic, morePartitionsThanBrokers, replication, oneYearRetention)).isTrue();
+      assertThat(kUtil.verifySupportTopic(zkClient, topic, morePartitionsThanBrokers, replication)).isEqualTo(KafkaUtilities.VerifyTopicState.Exactly);
     }
 
     // Cleanup
