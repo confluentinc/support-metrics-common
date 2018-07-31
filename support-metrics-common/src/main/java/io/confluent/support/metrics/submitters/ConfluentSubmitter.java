@@ -48,8 +48,8 @@ public class ConfluentSubmitter implements Submitter {
   /**
    * Class that decides how to send data to Confluent.
    *
-   * @param endpointHTTP: HTTP endpoint for the Confluent support service. Can be null.
-   * @param endpointHTTPS: HTTPS endpoint for the Confluent support service. Can be null.
+   * @param endpointHTTP HTTP endpoint for the Confluent support service. Can be null.
+   * @param endpointHTTPS HTTPS endpoint for the Confluent support service. Can be null.
    */
   public ConfluentSubmitter(String customerId, String endpointHTTP, String endpointHTTPS) {
     this(customerId, endpointHTTP, endpointHTTPS, null, null);

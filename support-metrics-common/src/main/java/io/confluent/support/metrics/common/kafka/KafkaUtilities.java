@@ -144,18 +144,7 @@ public class KafkaUtilities {
   ) {
     Objects.requireNonNull(zkClient, "zkClient must not be null");
 
-    if (topic == null || topic.isEmpty()) {
-      throw new IllegalArgumentException("topic must not be null or empty");
-    }
-    if (partitions < 1) {
-      throw new IllegalArgumentException("partitions must be >= 1");
-    }
-    if (replication < 1) {
-      throw new IllegalArgumentException("replication factor must be >= 1");
-    }
-    if (retentionMs <= 0) {
-      throw new IllegalArgumentException("retention.ms must be >= 1");
-    }
+    validateTopicParams(topic, partitions, replication, retentionMs);
 
     boolean topicCreated = true;
     try {
@@ -220,6 +209,26 @@ public class KafkaUtilities {
     }
 
     return topicCreated;
+  }
+
+  private void validateTopicParams(
+      String topic,
+      int partitions,
+      int replication,
+      long retentionMs
+  ) {
+    if (topic == null || topic.isEmpty()) {
+      throw new IllegalArgumentException("topic must not be null or empty");
+    }
+    if (partitions < 1) {
+      throw new IllegalArgumentException("partitions must be >= 1");
+    }
+    if (replication < 1) {
+      throw new IllegalArgumentException("replication factor must be >= 1");
+    }
+    if (retentionMs <= 0) {
+      throw new IllegalArgumentException("retention.ms must be >= 1");
+    }
   }
 
   /**
