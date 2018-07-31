@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -38,7 +39,7 @@ import io.confluent.support.metrics.utils.Jitter;
  *
  * This class is not thread-safe.
  */
-public abstract class BaseMetricsReporter implements Runnable {
+public abstract class BaseMetricsReporter extends Thread implements Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(BaseMetricsReporter.class);
 
@@ -67,7 +68,6 @@ public abstract class BaseMetricsReporter implements Runnable {
   private static final long SETTLING_TIME_MS = 10 * 1000L;
   private final boolean enableSettlingTime;
 
-
   private String customerId;
   private long reportIntervalMs;
   private String supportTopic;
@@ -78,9 +78,12 @@ public abstract class BaseMetricsReporter implements Runnable {
   protected final KafkaUtilities kafkaUtilities;
   protected final BaseSupportConfig supportConfig;
   private final ResponseHandler responseHandler;
+  private volatile boolean isClosing = false;
 
-  public BaseMetricsReporter(BaseSupportConfig serverConfiguration) {
-    this(serverConfiguration,  new KafkaUtilities(), null, true);
+  public BaseMetricsReporter(String threadName,
+                             boolean isDaemon,
+                             BaseSupportConfig serverConfiguration) {
+    this(threadName, isDaemon, serverConfiguration,  new KafkaUtilities(), null, true);
   }
 
   /**
@@ -91,14 +94,14 @@ public abstract class BaseMetricsReporter implements Runnable {
    * @param responseHandler Http Response Handler
    * @param enableSettlingTime Enable settling time before starting metrics
    */
-  public BaseMetricsReporter(
-      BaseSupportConfig supportConfig,
-      KafkaUtilities kafkaUtilities,
-      ResponseHandler responseHandler,
-      boolean enableSettlingTime
-  ) {
-
-
+  public BaseMetricsReporter(String threadName,
+                             boolean isDaemon,
+                             BaseSupportConfig supportConfig,
+                             KafkaUtilities kafkaUtilities,
+                             ResponseHandler responseHandler,
+                             boolean enableSettlingTime) {
+    super(threadName);
+    setDaemon(isDaemon);
     Objects.requireNonNull(supportConfig, "supportConfig can't be null");
     if (StringUtils.isNotBlank(supportConfig.getKafkaTopic())) {
       Objects.requireNonNull(kafkaUtilities, "kafkaUtilities can't be null");
@@ -130,8 +133,7 @@ public abstract class BaseMetricsReporter implements Runnable {
 
     if (!endpointHTTP.isEmpty() || !endpointHTTPS.isEmpty()) {
       confluentSubmitter = new ConfluentSubmitter(customerId, endpointHTTP, endpointHTTPS,
-          proxyURI, responseHandler
-      );
+              proxyURI, responseHandler);
     } else {
       confluentSubmitter = null;
     }
@@ -161,79 +163,59 @@ public abstract class BaseMetricsReporter implements Runnable {
   public void run() {
     try {
       if (reportingEnabled()) {
-        boolean terminateEarly = waitForServer();
-        if (terminateEarly) {
-          log.info("Metrics collection stopped before it even started");
-        } else {
-          log.info("Starting metrics collection from monitored component...");
-          while (!Thread.currentThread().isInterrupted()) {
-            submitMetrics();
-            Thread.sleep(Jitter.addOnePercentJitter(reportIntervalMs));
-
-          }
+        waitForServer();
+        while (!isClosing) {
+          log.info("Attempting to collect and submit metrics");
+          submitMetrics();
+          Thread.sleep(Jitter.addOnePercentJitter(reportIntervalMs));
         }
       }
-    } catch (InterruptedException i) {
-      metricsCollector.setRuntimeState(Collector.RuntimeState.ShuttingDown);
-      submitMetrics();
-      log.info("Graceful terminating metrics collection because the monitored component is "
-               + "shutting down...");
+    } catch (InterruptedException e) {
+      log.error("Caught InterruptedException during metrics collection", e);
       Thread.currentThread().interrupt();
     } catch (Exception e) {
-      log.error("Terminating metrics collection from monitored component because: {}",
-          e.getMessage());
+      log.error("Caught exception during metrics collection", e);
     } finally {
+      if (isClosing) {
+        log.info("Gracefully terminating metrics collection");
+        metricsCollector.setRuntimeState(Collector.RuntimeState.ShuttingDown);
+        submitMetrics();
+      }
       log.info("Metrics collection stopped");
     }
   }
 
-  /**
-   * Waits for the monitored service to fully start up.
-   *
-   * This is a blocking call.  This method will return if and only if:
-   *
-   * <ul> <li>The service has successfully started.  The return value will be false.</li> <li>The
-   * server is shutting down.  The return value will be true.</li> <li>The current thread was
-   * interrupted.  The return value will be true.</li> </ul>
-   */
-  private boolean waitForServer() {
-    boolean terminateEarly = false;
-    try {
-      boolean keepWaitingForServerToStartup = true;
-      while (keepWaitingForServerToStartup && !Thread.currentThread().isInterrupted()) {
 
-        if (enableSettlingTime) {
-          long waitTimeMs = Jitter.addOnePercentJitter(SETTLING_TIME_MS);
-          log.info("Waiting {} ms for the monitored service to finish starting up...", waitTimeMs);
-          Thread.sleep(waitTimeMs);
-        }
+  @Override
+  public void close() {
+    log.info("Closing BaseMetricsReporter");
+    isClosing = true;
+    interrupt();
+  }
 
-        if (isShuttingDown()) {
-          keepWaitingForServerToStartup = false;
-          terminateEarly = true;
-          metricsCollector.setRuntimeState(Collector.RuntimeState.ShuttingDown);
-          log.info("Stopping metrics collection prematurely because service is shutting down");
-        } else {
-          if (isReadyForMetricsCollection()) {
-            log.info("Monitored service is now ready");
-            keepWaitingForServerToStartup = false;
-          }
-        }
+  // Waits for the monitored service to fully start up.
+  private void waitForServer() throws InterruptedException {
+    log.info("Waiting until monitored service is ready for metrics collection");
+    while (!isClosing && !isReadyForMetricsCollection() && !isShuttingDown()) {
+      if (enableSettlingTime) {
+        long waitTimeMs = Jitter.addOnePercentJitter(SETTLING_TIME_MS);
+        log.info("Waiting {} ms for the monitored service to finish starting up", waitTimeMs);
+        Thread.sleep(waitTimeMs);
       }
-    } catch (InterruptedException i) {
-      terminateEarly = true;
-      metricsCollector.setRuntimeState(Collector.RuntimeState.ShuttingDown);
-      Thread.currentThread().interrupt();
     }
-    return terminateEarly;
+    if (isShuttingDown()) {
+      close();
+    } else {
+      log.info("Monitored service is now ready");
+    }
   }
 
   protected abstract boolean isReadyForMetricsCollection();
 
   protected abstract boolean isShuttingDown();
 
-  // this is a protected method to enable testing
-  protected void submitMetrics() {
+  // package-private for tests
+  void submitMetrics() {
     byte[] encodedMetricsRecord = null;
     GenericContainer metricsRecord = metricsCollector.collectMetrics();
     try {
