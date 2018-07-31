@@ -197,8 +197,9 @@ public abstract class BaseMetricsReporter extends Thread implements Closeable {
     while (!isClosing && !isReadyForMetricsCollection() && !isShuttingDown()) {
       Thread.sleep(10);
     }
-    if (isShuttingDown())
+    if (isShuttingDown()) {
       close();
+    }
 
     log.info("Monitored service is now ready");
   }
