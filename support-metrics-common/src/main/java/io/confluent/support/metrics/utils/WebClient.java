@@ -42,11 +42,11 @@ public class WebClient {
    * Sends a POST request to a web server
    * This method requires a pre-configured http client instance
    *
-   * @param customerId: customer Id on behalf of which the request is sent
-   * @param bytes: request payload
-   * @param httpPost: A POST request structure
-   * @param proxy: a http (passive) proxy
-   * @param httpClient : apache http client instance configured by caller
+   * @param customerId customer Id on behalf of which the request is sent
+   * @param bytes request payload
+   * @param httpPost A POST request structure
+   * @param proxy a http (passive) proxy
+   * @param httpClient http client instance configured by caller
    * @return an HTTP Status code
    * @see #send(String, byte[], HttpPost, ResponseHandler)
    */
@@ -126,10 +126,10 @@ public class WebClient {
   /**
    * Sends a POST request to a web server via a HTTP proxy
    *
-   * @param customerId: customer Id on behalf of which the request is sent
-   * @param bytes: request payload
-   * @param httpPost: A POST request structure
-   * @param proxy: a http (passive) proxy
+   * @param customerId customer Id on behalf of which the request is sent
+   * @param bytes request payload
+   * @param httpPost A POST request structure
+   * @param proxy a http (passive) proxy
    * @return an HTTP Status code
    */
   public static int send(
@@ -145,9 +145,9 @@ public class WebClient {
   /**
    * Sends a POST request to a web server
    *
-   * @param customerId: customer Id on behalf of which the request is sent
-   * @param bytes: request payload
-   * @param httpPost: A POST request structure
+   * @param customerId customer Id on behalf of which the request is sent
+   * @param bytes request payload
+   * @param httpPost A POST request structure
    * @return an HTTP Status code
    */
   public static int send(

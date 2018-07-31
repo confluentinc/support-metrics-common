@@ -23,7 +23,7 @@ public class Jitter {
   /**
    * Adds 1% to a value. If value is 0, returns 0. If value is negative, adds 1% of abs(value) to it
    *
-   * @param value: Number to add 1% to. Could be negative.
+   * @param value Number to add 1% to. Could be negative.
    * @return Value +1% of abs(value)
    */
   public static long addOnePercentJitter(long value) {
