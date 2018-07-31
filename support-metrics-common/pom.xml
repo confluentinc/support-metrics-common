@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.confluent.support</groupId>
     <artifactId>support-metrics-common-parent</artifactId>
-    <version>4.1.2-SNAPSHOT</version>
+    <version>5.1.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>support-metrics-common</artifactId>
@@ -79,7 +79,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
+      <version>${mockito-all.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -91,7 +91,7 @@
     <dependency>
       <groupId>org.mock-server</groupId>
       <artifactId>mockserver-netty</artifactId>
-      <version>3.10.4</version>
+      <version>${mock-server.version}</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -103,7 +103,7 @@
     <dependency>
       <groupId>org.mock-server</groupId>
       <artifactId>mockserver-client-java</artifactId>
-      <version>3.10.4</version>
+      <version>${mock-server.version}</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>

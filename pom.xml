@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.confluent</groupId>
     <artifactId>common</artifactId>
-    <version>4.1.2-SNAPSHOT</version>
+    <version>5.1.0-SNAPSHOT</version>
   </parent>
 
   <groupId>io.confluent.support</groupId>
@@ -29,9 +29,8 @@
   </prerequisites>
 
   <properties>
-    <java.version>1.7</java.version>
     <assertj.version>2.2.0</assertj.version>
-    <mockito.version>2.0.31-beta</mockito.version>
+    <mock-server.version>3.10.4</mock-server.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven-assembly.version>2.6</maven-assembly.version>
     <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
@@ -63,16 +62,6 @@
       </plugins>
     </pluginManagement>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.3</version>
-        <inherited>true</inherited>
-        <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>

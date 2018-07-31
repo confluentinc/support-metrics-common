@@ -12,24 +12,15 @@
  * the License.
  */
 
-package io.confluent.support.metrics.utils;
+package io.confluent.support.metrics.validate;
 
-import java.util.Random;
-
-public class Jitter {
-
-  private static final Random random = new Random();
-
-  /**
-   * Adds 1% to a value. If value is 0, returns 0. If value is negative, adds 1% of abs(value) to it
-   *
-   * @param value Number to add 1% to. Could be negative.
-   * @return Value +1% of abs(value)
-   */
-  public static long addOnePercentJitter(long value) {
-    if (value == 0 || value < 100) {
-      return value;
-    }
-    return value + random.nextInt((int) Math.abs(value) / 100);
-  }
+/**
+ * Maintains current and previous valid types of KsqlModuleType
+ */
+public enum KSqlValidModuleType {
+  LOCAL_CLI,
+  REMOTE_CLI,
+  CLI,
+  EMBEDDED,
+  SERVER;
 }

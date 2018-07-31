@@ -17,13 +17,17 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpPost;
 import org.junit.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyZeroInteractions;
+
+import java.util.Random;
 
 public class WebClientTest {
   private String customerId = CustomerIdExamples.validCustomerIds[0];
   private static final String secureLiveTestEndpoint = "https://support-metrics.confluent.io/test";
+  private static final Random generator = new Random();
 
   @Test
   public void testSubmitIgnoresNullInput() {
@@ -56,12 +60,12 @@ public class WebClientTest {
     // Given
     HttpPost p = new HttpPost(secureLiveTestEndpoint);
     byte[] anyData = "anyData".getBytes();
+    int randomIndex = generator.nextInt(CustomerIdExamples.invalidCustomerIds.length);
+    String invalidCustomerId = CustomerIdExamples.invalidCustomerIds[randomIndex];
 
     // When/Then
-    for (String invalidCustomerId : CustomerIdExamples.invalidCustomerIds) {
-      assertThat(WebClient.send(invalidCustomerId, anyData, p, null)).isNotEqualTo(HttpStatus
-          .SC_OK);
-    }
+    assertNotEquals("customerId=" + invalidCustomerId,
+                    HttpStatus.SC_OK, WebClient.send(invalidCustomerId, anyData, p, null));
   }
 
   @Test
@@ -69,12 +73,12 @@ public class WebClientTest {
     // Given
     HttpPost p = new HttpPost(secureLiveTestEndpoint);
     byte[] anyData = "anyData".getBytes();
+    int randomIndex = generator.nextInt(CustomerIdExamples.invalidAnonymousIds.length);
+    String invalidCustomerId = CustomerIdExamples.invalidAnonymousIds[randomIndex];
 
     // When/Then
-    for (String invalidCustomerId : CustomerIdExamples.invalidAnonymousIds) {
-      assertThat(WebClient.send(invalidCustomerId, anyData, p, null)).isNotEqualTo(HttpStatus
-          .SC_OK);
-    }
+    assertNotEquals("customerId=" + invalidCustomerId,
+                    HttpStatus.SC_OK, WebClient.send(invalidCustomerId, anyData, p, null));
   }
 
   @Test
@@ -82,13 +86,14 @@ public class WebClientTest {
     // Given
     HttpPost p = new HttpPost(secureLiveTestEndpoint);
     byte[] anyData = "anyData".getBytes();
+    int randomIndex = generator.nextInt(CustomerIdExamples.validCustomerIds.length);
+    String validCustomerId = CustomerIdExamples.validCustomerIds[randomIndex];
 
     // When/Then
-    for (String validCustomerId : CustomerIdExamples.validCustomerIds) {
-      int status = WebClient.send(validCustomerId, anyData, p, null);
-      // if we are not connected to the internet this test should still pass
-      assertThat(status == HttpStatus.SC_OK || status == HttpStatus.SC_BAD_GATEWAY).isTrue();
-    }
+    int status = WebClient.send(validCustomerId, anyData, p, null);
+    // if we are not connected to the internet this test should still pass
+    assertTrue("customerId=" + validCustomerId,
+               status == HttpStatus.SC_OK || status == HttpStatus.SC_BAD_GATEWAY);
   }
 
   @Test
@@ -96,13 +101,14 @@ public class WebClientTest {
     // Given
     HttpPost p = new HttpPost(secureLiveTestEndpoint);
     byte[] anyData = "anyData".getBytes();
+    int randomIndex = generator.nextInt(CustomerIdExamples.validAnonymousIds.length);
+    String validCustomerId = CustomerIdExamples.validAnonymousIds[randomIndex];
 
     // When/Then
-    for (String validCustomerId : CustomerIdExamples.validAnonymousIds) {
-       int status = WebClient.send(validCustomerId, anyData, p, null);
-      // if we are not connected to the internet this test should still pass
-      assertThat(status == HttpStatus.SC_OK || status == HttpStatus.SC_BAD_GATEWAY).isTrue();
-    }
+    int status = WebClient.send(validCustomerId, anyData, p, null);
+    // if we are not connected to the internet this test should still pass
+    assertTrue("customerId=" + validCustomerId,
+               status == HttpStatus.SC_OK || status == HttpStatus.SC_BAD_GATEWAY);
   }
 
 }

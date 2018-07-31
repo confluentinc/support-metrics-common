@@ -21,9 +21,41 @@ public class CustomerIdExamples {
       "c00000", "c12345", "c99999", "c123456789", "c123456789012345678901234567890",
   };
 
+  public static final String[] validCaseSensitiveNewCustomerIds = {
+      "5003001200D8cyJ",
+      "abbcaabcaaDwcyJ",
+      "abbcaabcaadwcyj",
+      "abbcaAbcAadwcyj",
+      "AGGQAAFLSSDWPYJ",
+      "AGGQAAfLSSDWpYJ",
+      "123456789012345",
+      "c23456789012345",
+      "C23456789012345"
+  };
+
+  public static final String[] validCaseInsensitiveNewCustomerIds = {
+      "123456789012345123",
+      "123456789012345avc",
+      "5003001200D8cyJaaa",
+      "5003001200D8cyJ123",
+      "abbcaabcaadwcyjsss",
+      "AGGQAAFLSSDWPYJTTT"
+  };
+
   // These invalid customer ids should not include valid anonymous user IDs.
   public static final String[] invalidCustomerIds = {
-      "0c000", "0000C", null, "", "c", "C", "Hello", "World", "1", "12", "123", "1234", "12345"
+      "0c000", "0000C", null, "", "c", "C", "Hello", "World", "1", "12", "123", "1234", "12345",
+      "5003001200D8cy",
+      "abbcaabcaaDwcyJa",
+      "abbcaabcaadwc*j",
+      "AGGQAAFLSSD^PYJ",
+      "123456789$12345",
+      "12345678901234512",
+      "123456789012345avca",
+      "5003001200D8cyJaaa88",
+      "5003001200D8cyJ1@3",
+      "abbcaabcaadwcyj!ss",
+      "AGGQAAFLSSDWPYJ_TT",
   };
 
   public static final String[] validAnonymousIds = {"anonymous", "ANONYMOUS", "anonyMOUS"};
