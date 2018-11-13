@@ -33,7 +33,7 @@
       <scope>runtime</scope>
       <useTransitiveFiltering>true</useTransitiveFiltering>
       <excludes>
-        <exclude>org.apache.kafka:kafka_2.11</exclude>
+        <exclude>org.apache.kafka:kafka_${kafka.scala.version}</exclude>
         <exclude>org.apache.kafka:kafka_clients</exclude>
         <!-- jline for some reason has a compile dependency on junit which is getting pulled in here -->
         <exclude>junit:junit</exclude>
