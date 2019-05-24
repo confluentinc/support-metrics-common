@@ -1,5 +1,8 @@
 # Confluent Proactive Support: Common Library
 
+| THIS REPO IS DEPRECATED.  Please use [ce-kafka](https://github.com/confluentinc/ce-kafka) instead. |
+| -------------------------------------------------------------------------------------------------- |
+
 # Overview
 
 This repository contains common utilities for metrics collection of proactive support.
