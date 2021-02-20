@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.confluent.support</groupId>
     <artifactId>support-metrics-common-parent</artifactId>
-    <version>4.1.4-SNAPSHOT</version>
+    <version>4.1.5-SNAPSHOT</version>
   </parent>
 
   <artifactId>support-metrics-common</artifactId>
