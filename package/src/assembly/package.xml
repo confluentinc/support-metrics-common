@@ -37,6 +37,7 @@
         <exclude>org.apache.kafka:kafka_clients</exclude>
         <!-- jline for some reason has a compile dependency on junit which is getting pulled in here -->
         <exclude>junit:junit</exclude>
+        <exclude>io.netty:netty</exclude>
       </excludes>
     </dependencySet>
   </dependencySets>

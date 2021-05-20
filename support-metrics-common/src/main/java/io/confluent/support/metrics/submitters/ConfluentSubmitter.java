@@ -15,7 +15,6 @@
 package io.confluent.support.metrics.submitters;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpPost;
@@ -98,12 +97,12 @@ public class ConfluentSubmitter implements Submitter {
       throw new IllegalArgumentException("must specify endpoints");
     }
     if (StringUtils.isNotEmpty(endpointHTTP)) {
-      if (!testEndpointValid(new String[]{"http"}, endpointHTTP)) {
+      if (!endpointHTTP.startsWith("http://")) {
         throw new IllegalArgumentException("invalid HTTP endpoint " + endpointHTTP);
       }
     }
     if (StringUtils.isNotEmpty(endpointHTTPS)) {
-      if (!testEndpointValid(new String[]{"https"}, endpointHTTPS)) {
+      if (!endpointHTTPS.startsWith("https://")) {
         throw new IllegalArgumentException("invalid HTTPS endpoint " + endpointHTTPS);
       }
     }
@@ -119,11 +118,6 @@ public class ConfluentSubmitter implements Submitter {
       URI proxyURI = URI.create(proxyURIString);
       this.setProxy(proxyURI.getHost(), proxyURI.getPort(), proxyURI.getScheme());
     }
-  }
-
-  private boolean testEndpointValid(String[] schemes, String endpoint) {
-    UrlValidator urlValidator = new UrlValidator(schemes, UrlValidator.ALLOW_LOCAL_URLS);
-    return urlValidator.isValid(endpoint);
   }
 
   /**
