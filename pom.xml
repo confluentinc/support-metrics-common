@@ -49,6 +49,10 @@
       <name>Confluent</name>
       <url>${confluent.maven.repo}</url>
     </repository>
+    <repository>
+      <id>redhat-repo</id>
+      <url>https://maven.repository.redhat.com/ga/</url>
+    </repository>
   </repositories>
 
   <build>
